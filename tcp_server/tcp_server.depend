@@ -1,0 +1,16 @@
+# depslib dependency file v1.0
+1388591735 source:/home/jigsaw/codeblocks_workspace/tcp_server/listen_module.c
+
+1388587015 source:/home/jigsaw/codeblocks_workspace/tcp_server/main.c
+	"listen_module.h"
+
+1388588392 /home/jigsaw/codeblocks_workspace/tcp_server/listen_module.h
+	<stdio.h>
+	<stdlib.h>
+
+1388591698 source:/home/jigsaw/codeblocks_workspace/tcp_server/communication_module.c
+
+1388591715 source:/home/jigsaw/codeblocks_workspace/tcp_server/execute_module.c
+
+1388591759 source:/home/jigsaw/codeblocks_workspace/tcp_server/parser_module.c
+
