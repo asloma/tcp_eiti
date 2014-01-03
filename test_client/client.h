@@ -1,12 +1,8 @@
-#ifndef PARSER_MODULE_H_INCLUDED
-#define PARSER_MODULE_H_INCLUDED
 
-#include <stdlib.h>
-#include <string.h>
-#include "execute_module.h"
+#define PORT 2022
+#define MAXWORD 50
 
 #define N 1024
-#define BUFSIZE 4096
 
 #define CODE_OPEN_SERVER        10
 #define CODE_OPEN_SERVER_RES    20
@@ -111,7 +107,7 @@ typedef struct
 typedef struct
 {
     short command_code;             /* kod_funkcji */
-    int error_code1;                  /* kod błędu */
+    int error_code;                  /* kod błędu */
     int srvhndl;                    /* uchwyt serwera */
 } open_server_res;
 
@@ -166,15 +162,3 @@ typedef struct
     int error_code;/* kod błędu */
     int result;/* 0 jeśli poprawnie */
 } lock_file_res;
-
-open_server_res get_open_server_res_struct();
-open_file_res get_open_file_res_struct();
-write_file_res get_write_file_res_struct();
-read_file_res get_read_file_res_struct();
-lseek_file_res get_lseek_file_res_struct();
-close_file_res get_close_file_res_struct();
-fstat_file_res get_fstat_file_res_struct();
-lock_file_res get_lock_file_res_struct();
-
-
-#endif // PARSER_MODULE_H_INCLUDED
