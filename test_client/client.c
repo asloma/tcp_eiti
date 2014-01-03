@@ -134,7 +134,7 @@ int fs_close( int srvhndl, int fd );
 int fs_fstat( int srvhndl, int fd, struct stat *buf);
 int fs_lock( int srvhndl, int fd, int mode );
 
-int command (char *cmd,char *word);
+int command (char *cmd,char *word, char *word2, char *word3,char * word4);
 void help();
 
 int main(int argc, char *argv[])
@@ -147,12 +147,18 @@ int main(int argc, char *argv[])
 	int fd;
 	char cmd;			//litera komendy
 	char word [MAXWORD + 1];	//parametr komendy
+	char word2 [MAXWORD + 1];	//parametr komendy
+	char word3 [MAXWORD + 1];	//parametr komendy
+	char word4 [MAXWORD + 1];	//parametr komendy
 	int wordlen = 0;
 	help();
 	while (1)
 	{
 		memset(word, 0, sizeof word);
-		wordlen = command(&cmd,word);
+		memset(word2, 0, sizeof word);
+		memset(word3, 0, sizeof word);
+		memset(word4, 0, sizeof word);
+		wordlen = command(&cmd,word,word2,word3,word4);
 		
 		switch (cmd)
 		{
@@ -164,39 +170,39 @@ int main(int argc, char *argv[])
 			break;
 
 			case 'e':
-			fs_close_serwer(srvhndl);
-			printf("Zakonczono polaczenie z serwerem ip: %s , uchwyt: %d\n", serwer_ip, srvhndl);
+			fs_close_serwer(atoi(word));
 			break;
 
 			case 'o':
-			fd = fs_open(srvhndl, word, 113);
+			fd = fs_open(atoi(word), word2, atoi(word3));
 			break;
 
 			case 'w':
 			{
-			fs_write(srvhndl,fd, word, strlen(word));
+			fs_write(atoi(word),atoi(word2), word3, strlen(word3));
 
 			break;
 			}
 			case 'r':
-			fs_read(srvhndl,fd, word, strlen(word));
+			fs_read(atoi(word),atoi(word2), word3, strlen(word3));
 			break;
 			
 			case 's':
-			fs_lseek(srvhndl,fd, atoi(word), 115);
+			fs_lseek(atoi(word),atoi(word2), atoi(word3), atoi(word4));
 			break;
 
 			case 'a':
-			fs_close(srvhndl,fd);
+			fs_close(atoi(word),atoi(word2));
 
 			break;
 
 			case 'f':
-			fs_fstat(srvhndl,fd, 0); //popraw
+			fs_fstat(atoi(word),atoi(word2), 0); //popraw
 			break;
 
 			case 'l':
-			fs_lock(srvhndl,fd, 1);
+			fs_lock(atoi(word),atoi(word2), atoi(word3));
+			printf("result: 0 - OK, 1 - blokada WRITE juz istnieje, 2 - blokada READ/WRITE juz istnieje.\n");
 			break;
 
 			case 'x':
@@ -264,7 +270,7 @@ int fs_open_serwer(char *adres_serwer)
 	open_server_res _open_server_res;
 	memcpy(&_open_server_res, buffor_tmp2, sizeof(open_server_res));
 
-	printf("Odpowiedz z serwera, fs_open_serwer, error code: %d, srvhndl: %d\n", _open_server_res.error_code, _open_server_res.srvhndl);
+	printf("Odpowiedz z serwera, fs_open_serwer, error code: %d, srvhndl: %d\n", _open_server_res.error_code, sock);
 	return sock;
 }
 
@@ -300,12 +306,17 @@ int fs_open( int srvhndl, char *name, int flags )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
-	open_file_res _open_file_res;
-	memcpy(&_open_file_res, buffor_tmp2, sizeof(open_file_res));
+	else
+	{
+		open_file_res _open_file_res;
+		memcpy(&_open_file_res, buffor_tmp2, sizeof(open_file_res));
 
-	printf("Odpowiedz z serwera, fs_open, error code: %d, fd: %d\n", _open_file_res.error_code, _open_file_res.fd);
+		printf("Odpowiedz z serwera, fs_open, error code: %d, fd: %d\n", _open_file_res.error_code, _open_file_res.fd);
 
-	return _open_file_res.fd;
+		return _open_file_res.fd;
+	}
+	printf("Zly uchwyt serwera\n");
+	return -1;
 }
 
 int fs_write( int srvhndl, int fd, void *buf, size_t len )
@@ -327,11 +338,15 @@ int fs_write( int srvhndl, int fd, void *buf, size_t len )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
-	write_file_res _write_file_res;
-	memcpy(&_write_file_res, buffor_tmp2, sizeof(write_file_res));
+	else
+	{
+		write_file_res _write_file_res;
+		memcpy(&_write_file_res, buffor_tmp2, sizeof(write_file_res));
 
-	printf("Odpowiedz z serwera, fs_write, error code: %d, result: %d\n", _write_file_res.error_code, _write_file_res.result);
-
+		printf("Odpowiedz z serwera, fs_write, error code: %d, result: %d\n", _write_file_res.error_code, _write_file_res.result);
+		return 0;
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 int fs_read( int srvhndl, int fd, void *buf, size_t len )
@@ -352,10 +367,16 @@ int fs_read( int srvhndl, int fd, void *buf, size_t len )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
-	read_file_res _read_file_res;
-	memcpy(&_read_file_res, buffor_tmp2, sizeof(read_file_res));
+	else
+	{
+		read_file_res _read_file_res;
+		memcpy(&_read_file_res, buffor_tmp2, sizeof(read_file_res));
 
-	printf("Odpowiedz z serwera, fs_read, error code: %d, result: %d, data_lenght %d, data: %s\n", _read_file_res.error_code, _read_file_res.result, _read_file_res.data_lenght, _read_file_res.data);
+		printf("Odpowiedz z serwera, fs_read, error code: %d, result: %d, data_lenght %d, data: %s\n", _read_file_res.error_code, _read_file_res.result, _read_file_res.data_lenght, _read_file_res.data);
+
+	return 0;
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 int fs_lseek( int srvhndl, int fd, long offset, int whence )
@@ -376,11 +397,16 @@ int fs_lseek( int srvhndl, int fd, long offset, int whence )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
+	else
+	{
 	lseek_file_res _lseek_file_res;
 	memcpy(&_lseek_file_res, buffor_tmp2, sizeof(_lseek_file_res));
 
 	printf("Odpowiedz z serwera, fs_lseek, error code: %d, new_offset: %d\n", _lseek_file_res.error_code, _lseek_file_res.new_offset);
+	return 0;
 
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 int fs_close( int srvhndl, int fd )
@@ -400,11 +426,16 @@ int fs_close( int srvhndl, int fd )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
+	else
+	{
 	close_file_res _close_file_res;
 	memcpy(&_close_file_res, buffor_tmp2, sizeof(_close_file_res));
 
 	printf("Odpowiedz z serwera, fs_close, error code: %d, result: %d\n", _close_file_res.error_code, _close_file_res.result);
+	return 0;
 
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 int fs_fstat( int srvhndl, int fd, struct stat *buf)
@@ -423,10 +454,17 @@ int fs_fstat( int srvhndl, int fd, struct stat *buf)
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
+	else
+	{
+
 	fstat_file_res _fstat_file_res;
 	memcpy(&_fstat_file_res, buffor_tmp2, sizeof(_fstat_file_res));
 
 	printf("Odpowiedz z serwera, fs_fstat, error code: %d, data_lenght: %d, data: %s\n", _fstat_file_res.error_code, _fstat_file_res.data_lenght, _fstat_file_res.data);
+	return 0;
+
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 int fs_lock( int srvhndl, int fd, int mode )
@@ -446,16 +484,22 @@ int fs_lock( int srvhndl, int fd, int mode )
 	char buffor_tmp2 [4096];
 	if ((read(srvhndl,buffor_tmp2, 4096)) == -1)
             perror("reading stream message");
+	else
+	{
+
 	lock_file_res _lock_file_res;
 	memcpy(&_lock_file_res, buffor_tmp2, sizeof(_lock_file_res));
 
 	printf("Odpowiedz z serwera, fs_lock, error code: %d, result: %d\n", _lock_file_res.error_code, _lock_file_res.result);
+	return 0;
 
+	}
+	printf("Zly uchwyt serwera\n");
 }
 
 
 
-int command (char *cmd,char *word)
+int command (char *cmd,char *word, char *word2, char *word3,char * word4)
 {
 	int i, ch;
 
@@ -488,6 +532,62 @@ int command (char *cmd,char *word)
 		*word++ = ch;
 		ch = getc(stdin);
 	}
+
+	if (ch == EOF)
+	return -1;
+	if (ch == '\n')
+	return 0;
+	i = 0;
+	ch = getc(stdin);
+	while (ch == ' ')
+	ch = getc(stdin);
+	
+	while ((ch != ' ') && (ch != '\n'))
+	{
+		if (++i > MAXWORD)
+		{
+		exit(1);
+		}
+		*word2++ = ch;
+		ch = getc(stdin);
+	}
+
+	if (ch == EOF)
+	return -1;
+	if (ch == '\n')
+	return 0;
+	i = 0;
+	ch = getc(stdin);
+	while (ch == ' ')
+	ch = getc(stdin);
+	while ((ch != ' ') && (ch != '\n'))
+	{
+		if (++i > MAXWORD)
+		{
+		exit(1);
+		}
+		*word3++ = ch;
+		ch = getc(stdin);
+	}
+
+	if (ch == EOF)
+	return -1;
+	if (ch == '\n')
+	return 0;
+	i = 0;
+	ch = getc(stdin);
+	while (ch == ' ')
+	ch = getc(stdin);
+	while ((ch != ' ') && (ch != '\n'))
+	{
+		if (++i > MAXWORD)
+		{
+		exit(1);
+		}
+		*word4++ = ch;
+		ch = getc(stdin);
+	}
+
 	
 	return i;
 }
@@ -495,15 +595,15 @@ int command (char *cmd,char *word)
 void help()
 {
 	printf("Dostepne polecenia :\n");
-        printf(" c <id>		- polacz z serwerem.\n");
-        printf(" e 		- zakoncz polaczenie.\n");
-        printf(" o <nazwa>	- otworz plik.\n");
-        printf(" w <dane>	- zapisz do pliku.\n");
-       	printf(" r 		- odczytaj z pliku.\n");
-       	printf(" s <offset>	- przesun wskaznik w pliku.\n");
-       	printf(" a 		- zamknij plik.\n");
-        printf(" f 		- daj fstat\n");
-       	printf(" l 		- lock pliku\n");
-	printf(" x 		- wyjscie z programu\n");
-	printf(" h - help.\n");
+        printf(" c <ip>						- polacz z serwerem.\n");
+        printf(" e <uchwyt serw>				- zakoncz polaczenie.\n");
+        printf(" o <uchwyt serw> <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND.\n");
+        printf(" w <uchwyt serw> <desk pliku> <dane>		- zapisz do pliku.\n");
+       	printf(" r <uchwyt serw> <desk pliku>			- odczytaj z pliku.\n");
+       	printf(" s <uchwyt serw> <desk pliku> <offset> <whence> - przesun wskaznik w pliku.\n");
+       	printf(" a <uchwyt serw> <desk pliku>			- zamknij plik.\n");
+        printf(" f <uchwyt serw> <desk pliku>			- daj fstat\n");
+       	printf(" l <uchwyt serw> <desk pliku> <mode>		- lock pliku, mode: 0 - READ_LOCK, 1 - WRITE_LOCK, 2 - UNLOCK\n");
+	printf(" x 						- wyjscie z programu\n");
+	printf(" h 						- help.\n");
 }

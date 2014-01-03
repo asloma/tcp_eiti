@@ -1,5 +1,7 @@
 #include "execute_module.h"
 
+int fd;
+
 int fs_open_serwer( char *adres_serwera )
 {
     printf("fs_open_serwer, adres serwera: %s\n", adres_serwera);
@@ -14,8 +16,25 @@ int fs_close_serwer( int srvhndl )
 
 int fs_open( int srvhndl, char *name, int flags )
 {
+    switch (flags)
+    {
+        case 0:
+            fd = open(name, O_RDONLY);
+        break;
+        case 1:
+            fd = open(name, O_WRONLY);
+        break;
+        case 2:
+            fd = open(name, O_CREAT);
+        break;
+        case 3:
+            fd = open(name, O_APPEND);
+        break;
+        default:
+        break;
+    }
     printf("fs_open, uchwyt: %d, nazwa pliku: %s, flagi: %d\n", srvhndl, name, flags);
-    return 777;
+    return fd;
 }
 
 int fs_write( int srvhndl, int fd, void *buf, size_t len )
@@ -38,8 +57,9 @@ int fs_lseek( int srvhndl, int fd, long offset, int whence )
 
 int fs_close( int srvhndl, int fd )
 {
+    int ret = close(fd);
     printf("fs_close, uchwyt: %d, deskryptor pliku: %d\n", srvhndl, fd);
-    return 1;
+    return ret;
 }
 
 int fs_fstat( int srvhndl, int fd, struct stat *buf)
@@ -51,5 +71,93 @@ int fs_fstat( int srvhndl, int fd, struct stat *buf)
 int fs_lock( int srvhndl, int fd, int mode )
 {
     printf("fs_lock, uchwyt: %d, deskryptor pliku: %d, blkada: %d\n", srvhndl, fd, mode);
-    return 1;
+    int ret = lock(fd, mode);
+    return ret;
+}
+
+/***************pomocnicze***************/
+int check_read_lock(int fd)
+{
+    struct flock lock, savelock;
+
+    lock.l_type    = F_WRLCK;   /* Test for any lock on any part of file. */
+    lock.l_start   = 0;
+    lock.l_whence  = SEEK_SET;
+    lock.l_len     = 0;
+    savelock = lock;
+    fcntl(fd, F_GETLK, &lock);  /* Overwrites lock structure with preventors. */
+    if (lock.l_type == F_RDLCK)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int check_write_lock(int fd)
+{
+    struct flock lock, savelock;
+
+    lock.l_type    = F_WRLCK;   /* Test for any lock on any part of file. */
+    lock.l_start   = 0;
+    lock.l_whence  = SEEK_SET;
+    lock.l_len     = 0;
+    savelock = lock;
+    fcntl(fd, F_GETLK, &lock);  /* Overwrites lock structure with preventors. */
+    if (lock.l_type == F_WRLCK)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+int lock(int fd, int mode)
+{
+    struct flock lock;
+    memset (&lock, 0, sizeof(lock));
+
+    switch (mode)
+    {
+        case 0:
+        {
+            if (check_write_lock(fd) == 0)
+            {
+                 lock.l_type = F_RDLCK;
+                 printf("Read lock set\n");
+            }
+            else
+            {
+                printf("Read lock error, write lock exists\n");
+                return 1;
+            }
+        }
+        break;
+
+        case 1:
+        {
+            if (check_read_lock(fd) == 0 && check_write_lock(fd) == 0)
+            {
+                lock.l_type = F_WRLCK;
+                printf("Write lock set\n");
+            }
+            else
+            {
+                printf("Write lock error, read or write lock exists\n");
+                return 2;
+            }
+
+        break;
+        }
+        case 2:
+        {
+                lock.l_type = F_UNLCK;
+                printf("Unlock file\n");
+        break;
+        }
+        default:
+        break;
+    }
+
+    fcntl (fd, F_SETLKW, &lock);
+
+    return 0;
 }

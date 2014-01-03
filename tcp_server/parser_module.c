@@ -54,6 +54,10 @@ void parse(void * buf, int new_sock)
 
             /******wyslij odpowiedz******/
             open_file_res _open_file_res = get_open_file_res_struct();
+            if (fd == -1)
+            {
+                _open_file_res.error_code = -1;
+            }
             _open_file_res.fd = fd;
 
             char res_buf [BUFSIZE];
@@ -128,10 +132,12 @@ void parse(void * buf, int new_sock)
         {
             close_file _close_file;
             memcpy(&_close_file, buf, sizeof(close_file));
-            fs_close(_close_file.srvhndl, _close_file.fd);
+            int ret = fs_close(_close_file.srvhndl, _close_file.fd);
 
             /******wyslij odpowiedz******/
             close_file_res _close_file_res = get_close_file_res_struct();
+            _close_file_res.error_code = ret;
+            _close_file_res.result = ret;
 
             char res_buf [BUFSIZE];
             memcpy(res_buf, &_close_file_res, sizeof(_close_file_res));
@@ -166,11 +172,15 @@ void parse(void * buf, int new_sock)
         {
             lock_file _lock_file;
             memcpy(&_lock_file, buf, sizeof(lock_file));
-            fs_lock(_lock_file.srvhndl, _lock_file.fd, _lock_file.mode);
+            int ret = fs_lock(_lock_file.srvhndl, _lock_file.fd, _lock_file.mode);
 
             /******wyslij odpowiedz******/
             lock_file_res _lock_file_res = get_lock_file_res_struct();
-
+            if (ret != 0)
+            {
+                _lock_file_res.error_code = -1;
+            }
+            _lock_file_res.result = ret;
             char res_buf [BUFSIZE];
             memcpy(res_buf, &_lock_file_res, sizeof(_lock_file_res));
 
