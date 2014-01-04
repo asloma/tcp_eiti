@@ -73,11 +73,21 @@ void parse(void * buf, int new_sock)
         {
             write_file _write_file;
             memcpy(&_write_file, buf, sizeof(write_file));
-            fs_write(_write_file.srvhndl, _write_file.fd, _write_file.buf , _write_file.len);
+            int ret = fs_write(_write_file.srvhndl, _write_file.fd, _write_file.buf , _write_file.len);
 
             /******wyslij odpowiedz******/
             write_file_res _write_file_res = get_write_file_res_struct();
-            _write_file_res.result = _write_file.len;
+            if (ret == -1)
+            {
+                _write_file_res.error_code = -1;
+                _write_file_res.result = 0;
+
+            }
+            else
+            {
+                _write_file_res.result = ret;
+            }
+
 
             char res_buf [BUFSIZE];
             memcpy(res_buf, &_write_file_res, sizeof(_write_file_res));
@@ -92,13 +102,23 @@ void parse(void * buf, int new_sock)
         {
             read_file _read_file;
             memcpy(&_read_file, buf, sizeof(read_file));
-            fs_read(_read_file.srvhndl, _read_file.fd, _read_file.buf , _read_file.len);
+            char buf_data[1024];
+            int ret = fs_read(_read_file.srvhndl, _read_file.fd, buf_data , _read_file.len);
 
             /******wyslij odpowiedz******/
             read_file_res _read_file_res = get_read_file_res_struct();
-            _read_file_res.result = 1;
-            _read_file_res.data_lenght = _read_file.len;
-            strcpy(_read_file_res.data, "przeczytany_plik");
+            if (ret == -1)
+            {
+                _read_file_res.error_code = -1;
+                _read_file_res.data_lenght = 0;
+            }
+            else
+            {
+                _read_file_res.data_lenght = ret;
+            }
+            _read_file_res.result = ret;
+
+            memcpy(_read_file_res.data, buf_data, _read_file_res.data_lenght);
 
             char res_buf [BUFSIZE];
             memcpy(res_buf, &_read_file_res, sizeof(_read_file_res));
@@ -113,11 +133,11 @@ void parse(void * buf, int new_sock)
         {
             lseek_file _lseek_file;
             memcpy(&_lseek_file, buf, sizeof(lseek_file));
-            fs_lseek(_lseek_file.srvhndl, _lseek_file.fd, _lseek_file.offset , _lseek_file.whence);
+            int ret = fs_lseek(_lseek_file.srvhndl, _lseek_file.fd, _lseek_file.offset , _lseek_file.whence);
 
             /******wyslij odpowiedz******/
             lseek_file_res _lseek_file_res = get_lseek_file_res_struct();
-            _lseek_file_res.new_offset = _lseek_file.offset;
+            _lseek_file_res.new_offset = ret;
 
             char res_buf [BUFSIZE];
             memcpy(res_buf, &_lseek_file_res, sizeof(_lseek_file_res));
@@ -152,15 +172,16 @@ void parse(void * buf, int new_sock)
         {
             fstat_file _fstat_file;
             memcpy(&_fstat_file, buf, sizeof(fstat_file));
-            fs_fstat(_fstat_file.srvhndl, _fstat_file.fd, 0); //popraw
+            char stat_buf[1024];
+            int ret = fs_fstat(_fstat_file.srvhndl, _fstat_file.fd, stat_buf);
 
             /******wyslij odpowiedz******/
             fstat_file_res _fstat_file_res = get_fstat_file_res_struct();
-            strcpy(_fstat_file_res.data, "dane_opcjonalne");
-            _fstat_file_res.data_lenght = strlen("dane_opcjonalne");
+            memcpy(_fstat_file_res.data, stat_buf, sizeof(struct stat));
+            _fstat_file_res.data_lenght = ret;
 
             char res_buf [BUFSIZE];
-            memcpy(res_buf, &_fstat_file_res, sizeof(_fstat_file_res));
+            memcpy(res_buf, &_fstat_file_res, ret);
 
             if (write( new_sock, res_buf, BUFSIZE ) == -1)
             perror("writing on stream socket");

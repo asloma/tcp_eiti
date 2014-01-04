@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <math.h>
+#include <time.h>
 #include "client.h"
 
 /************************do serwera*************************/
@@ -174,21 +177,102 @@ int main(int argc, char *argv[])
 			break;
 
 			case 'o':
-			fd = fs_open(atoi(word), word2, atoi(word3));
+
+			switch (atoi(word3))
+			{
+				case 0:
+					fd = fs_open(atoi(word), word2, O_RDONLY);
+				break;
+				case 1:
+					fd = fs_open(atoi(word), word2, O_WRONLY);
+				break;
+				case 2:
+					fd = fs_open(atoi(word), word2, O_CREAT);
+				break;
+				case 3:
+					fd = fs_open(atoi(word), word2, O_APPEND);
+				break;
+			}
+
 			break;
 
 			case 'w':
 			{
-			fs_write(atoi(word),atoi(word2), word3, strlen(word3));
+				int fd_send = open (word3, O_RDONLY);
+				int data_size = atoi(word4);
+				//int file_size = lseek(fd_send, 0, SEEK_END);
+				//lseek(fd_send, 0, SEEK_SET); //na poczatek;
+				char buforek[10];
 
+				int parts = ceil((double)data_size/sizeof(buforek));
+				//file_size/sizeof(buforek) + 1;
+				int i;
+				int read_num;
+				int buf_size = sizeof(buforek);
+
+				for(i = 0; i < parts; i++)
+				{
+					read_num = read(fd_send, buforek, buf_size);
+					fs_write(atoi(word), atoi(word2), buforek, read_num);
+					data_size -= read_num;
+					if (data_size - buf_size < 0)
+					{
+						buf_size = data_size;
+					}
+
+				}
+			
+			
+			//fs_write(atoi(word),atoi(word2), word3, strlen(word3));
+			//fs_write(atoi(word),fd_send, word3, strlen(word3));
+				close(fd_send);
 			break;
 			}
 			case 'r':
-			fs_read(atoi(word),atoi(word2), word3, strlen(word3));
-			break;
+			{
+				int fd_local = open(word3, O_WRONLY);
+				
+				int data_size = atoi(word4);
+				char buforek[10];
+				int parts = ceil((double)data_size/sizeof(buforek));
 			
+				int i, rea;
+				int buf_size = sizeof(buforek);
+				for (i = 0; i < parts; i++)
+				{
+					
+					rea = fs_read(atoi(word),atoi(word2),buforek, buf_size);
+					write(fd_local, buforek, rea);
+					data_size -= rea;
+					if (data_size - buf_size < 0)
+					{
+						buf_size = data_size;
+					}
+
+				}
+				close(fd_local);
+
+				//memset(buff_dane, 0, sizeof buff_dane);
+				//fs_read(atoi(word),atoi(word2),buff_dane, atoi(word3));
+				//printf("W buforze zew: %s\n", buff_dane);
+			break;
+			}
 			case 's':
-			fs_lseek(atoi(word),atoi(word2), atoi(word3), atoi(word4));
+			switch (atoi(word4))
+			{
+				case 0:
+					fs_lseek(atoi(word),atoi(word2), atoi(word3), SEEK_SET);
+				break;
+				case 1:
+					fs_lseek(atoi(word),atoi(word2), atoi(word3), SEEK_CUR);
+				break;
+				case 2:
+					fs_lseek(atoi(word),atoi(word2), atoi(word3), SEEK_END);
+				break;
+			}
+
+			
+			
 			break;
 
 			case 'a':
@@ -371,10 +455,10 @@ int fs_read( int srvhndl, int fd, void *buf, size_t len )
 	{
 		read_file_res _read_file_res;
 		memcpy(&_read_file_res, buffor_tmp2, sizeof(read_file_res));
-
+		
 		printf("Odpowiedz z serwera, fs_read, error code: %d, result: %d, data_lenght %d, data: %s\n", _read_file_res.error_code, _read_file_res.result, _read_file_res.data_lenght, _read_file_res.data);
-
-	return 0;
+		memcpy(buf, _read_file_res.data, _read_file_res.data_lenght);
+	return _read_file_res.data_lenght;
 	}
 	printf("Zly uchwyt serwera\n");
 }
@@ -459,8 +543,30 @@ int fs_fstat( int srvhndl, int fd, struct stat *buf)
 
 	fstat_file_res _fstat_file_res;
 	memcpy(&_fstat_file_res, buffor_tmp2, sizeof(_fstat_file_res));
+	struct stat _stat;
+	memcpy(&_stat, _fstat_file_res.data, sizeof(struct stat));
+	
+	printf("Odpowiedz z serwera, fs_fstat, error code: %d, data_lenght: %d\n", _fstat_file_res.error_code, _fstat_file_res.data_lenght);
+	printf("ID: %d\n", _stat.st_dev);
+    	printf("Inode number: %d\n", _stat.st_ino);
+    	printf("Protection: %d\n", _stat.st_mode);
+    	printf("Number of hard links: %d\n", _stat.st_nlink);
+    	printf("user ID of owner: %d\n", _stat.st_uid);
+    	printf("group ID of owner %d\n", _stat.st_gid);
+    	printf("device ID: %d\n", _stat.st_rdev);
+    	printf("total size, in bytes : %d\n", _stat.st_size);
+    	printf("blocksize for file system I/O: %d\n", _stat.st_blksize);
+    	printf("number of 512B blocks allocated: %d\n", _stat.st_blocks);
+    	char* c_time_string1;
+    	char* c_time_string2;
+    	char* c_time_string3;
+    	c_time_string1 = ctime(&_stat.st_atime);
+    	printf("time of last access: %s", c_time_string1);
+    	c_time_string2 = ctime(&_stat.st_mtime);
+    	printf("time of last modification: %s", c_time_string2);
+    	c_time_string3 = ctime(&_stat.st_ctime);
+    	printf("time of last status change: %s", c_time_string3);
 
-	printf("Odpowiedz z serwera, fs_fstat, error code: %d, data_lenght: %d, data: %s\n", _fstat_file_res.error_code, _fstat_file_res.data_lenght, _fstat_file_res.data);
 	return 0;
 
 	}
@@ -592,18 +698,19 @@ int command (char *cmd,char *word, char *word2, char *word3,char * word4)
 	return i;
 }
 
+
 void help()
 {
 	printf("Dostepne polecenia :\n");
         printf(" c <ip>						- polacz z serwerem.\n");
-        printf(" e <uchwyt serw>				- zakoncz polaczenie.\n");
-        printf(" o <uchwyt serw> <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND.\n");
-        printf(" w <uchwyt serw> <desk pliku> <dane>		- zapisz do pliku.\n");
-       	printf(" r <uchwyt serw> <desk pliku>			- odczytaj z pliku.\n");
-       	printf(" s <uchwyt serw> <desk pliku> <offset> <whence> - przesun wskaznik w pliku.\n");
-       	printf(" a <uchwyt serw> <desk pliku>			- zamknij plik.\n");
-        printf(" f <uchwyt serw> <desk pliku>			- daj fstat\n");
-       	printf(" l <uchwyt serw> <desk pliku> <mode>		- lock pliku, mode: 0 - READ_LOCK, 1 - WRITE_LOCK, 2 - UNLOCK\n");
+        printf(" e <uchw serw>					- zakoncz polaczenie.\n");
+        printf(" o <uchw serw> <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND.\n");
+        printf(" w <uchw serw> <desk pli na serw> <naz pli lok> <ile bajtow> - zapisz do pliku.\n");
+       	printf(" r <uchw serw> <desk pli na serw> <naz pli lok> <ile bajtow> - odczytaj z pliku.\n");
+       	printf(" s <uchw serw> <desk pliku> <offset> <whence> 	- przesun wskaznik w pliku, whence: 0 - SEEK_SET, 1 - SEEK_CUR, 2 - SEEK_END\n");
+       	printf(" a <uchw serw> <desk pliku>			- zamknij plik.\n");
+        printf(" f <uchw serw> <desk pliku>			- daj fstat\n");
+       	printf(" l <uchw serw> <desk pliku> <mode>		- lock pliku, mode: 0 - READ_LOCK, 1 - WRITE_LOCK, 2 - UNLOCK\n");
 	printf(" x 						- wyjscie z programu\n");
 	printf(" h 						- help.\n");
 }

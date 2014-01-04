@@ -2,13 +2,13 @@
 
 int fd;
 
-int fs_open_serwer( char *adres_serwera )
+int fs_open_serwer( char *adres_serwera ) //do wyrzucenia
 {
     printf("fs_open_serwer, adres serwera: %s\n", adres_serwera);
-    return 5;
+    return 1;
 }
 
-int fs_close_serwer( int srvhndl )
+int fs_close_serwer( int srvhndl ) //do wyrzucenia
 {
     printf("fs_close_serwer, uchwyt: %d\n", srvhndl);
     return 1;
@@ -16,56 +16,52 @@ int fs_close_serwer( int srvhndl )
 
 int fs_open( int srvhndl, char *name, int flags )
 {
-    switch (flags)
-    {
-        case 0:
-            fd = open(name, O_RDONLY);
-        break;
-        case 1:
-            fd = open(name, O_WRONLY);
-        break;
-        case 2:
-            fd = open(name, O_CREAT);
-        break;
-        case 3:
-            fd = open(name, O_APPEND);
-        break;
-        default:
-        break;
-    }
     printf("fs_open, uchwyt: %d, nazwa pliku: %s, flagi: %d\n", srvhndl, name, flags);
+    if (flags == O_CREAT)
+    fd = open(name, flags, 0666); //kiepsko
+    else
+    fd = open(name, flags);
+
     return fd;
 }
 
 int fs_write( int srvhndl, int fd, void *buf, size_t len )
 {
     printf("fs_write, uchwyt: %d, deskryptor pliku: %d, wartosc: %s, dlugosc: %d\n", srvhndl, fd, buf, len);
-    return 1;
+    int ret = write(fd, buf, len);
+    return ret;
 }
 
 int fs_read( int srvhndl, int fd, void *buf, size_t len )
 {
     printf("fs_read, uchwyt: %d, deskryptor pliku: %d, wartosc: %s, dlugosc: %d\n", srvhndl, fd, buf, len);
-    return 1;
+    int ret = read(fd, buf, len);
+    return ret;
 }
 
 int fs_lseek( int srvhndl, int fd, long offset, int whence )
 {
-    printf("fs_lseek, uchwyt: %d, deskryptor pliku: %d, offset: %d, whence?: %d\n", srvhndl, fd, offset, whence);
-    return 1;
+    printf("fs_lseek, uchwyt: %d, deskryptor pliku: %d, offset: %d, whence: %d\n", srvhndl, fd, offset, whence);
+    int ret = lseek(fd, offset, whence);
+    return ret;
 }
 
 int fs_close( int srvhndl, int fd )
 {
-    int ret = close(fd);
     printf("fs_close, uchwyt: %d, deskryptor pliku: %d\n", srvhndl, fd);
+    int ret = close(fd);
+
     return ret;
 }
 
 int fs_fstat( int srvhndl, int fd, struct stat *buf)
 {
     printf("fs_fstat, uchwyt: %d, deskryptor pliku: %d\n", srvhndl, fd);
-    return 1;
+    struct stat _stat;
+    fstat(fd, &_stat);
+    memcpy(buf, &_stat, sizeof(struct stat));
+
+    return sizeof(struct stat);
 }
 
 int fs_lock( int srvhndl, int fd, int mode )
