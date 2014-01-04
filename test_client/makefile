@@ -4,10 +4,10 @@ CFLAGS=-c -Wall
 all: tcp_client
 
 tcp_client: client.o 
-	$(CC)  client.o -o tcp_client
+	$(CC)  client.o -lm -o tcp_client
 
 client.o: client.c client.h
-	$(CC) $(CFLAGS) client.c client.h
+	$(CC) $(CFLAGS) -lm client.c client.h
 
 clean:
-	rm -rf *o tcp_server
+	rm -rf *o tcp_client
