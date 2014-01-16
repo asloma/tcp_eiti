@@ -136,7 +136,7 @@ int connectedToAServer(int serverhndl)
             return 1;
 }
 //Returns the first spot with a non-allocated value.
-int findNextEmptyInArray(struct filepath this_filepath)
+int findNextEmptyInArray(struct filepath *this_filepath)
 {
     int i;
     for(i=0;i<MAXWORD+1;i++)
@@ -146,7 +146,7 @@ int findNextEmptyInArray(struct filepath this_filepath)
     return -1; //obsluz
 }
 
-int findFileInArray(struct filepath this_filepath,int file_descript)
+int findFileInArray(struct filepath *this_filepath,int file_descript)
 {
     int i;
     for(i=0;i<MAXWORD+1;i++)
