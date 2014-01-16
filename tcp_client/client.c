@@ -141,11 +141,12 @@ int findNextEmptyInArray(struct filepath *this_filepath)
     int i;
     for(i=0;i<MAXWORD+1;i++)
     {
-        if(this_filepath[i].file_path==0) return i;
+        if(this_filepath[i].file_descriptor==0) return i;
     }
     return -1; //obsluz
 }
 
+//Do znajdowania w arrayu sciezki o danym deskryptorze
 int findFileInArray(struct filepath *this_filepath,int file_descript)
 {
     int i;
@@ -174,7 +175,7 @@ void help();
 int main(int argc, char *argv[])
 {
 	//open_server _open_server;
-
+    int temp;
 	int srvhndl=-1; // -1 jesli nie jestesmy polaczeni z zadnym serwerem
 	char serwer_ip [MAXWORD + 1];
     struct filepath filepaths[MAXWORD + 1]; // Tu trzymamy pary filepath+file descriptor
@@ -214,7 +215,7 @@ int main(int argc, char *argv[])
 			srvhndl=-1;
 			break;
 
-            case 'ls':
+            case 'b':
             listFileDescriptorList();
             break;
 			case 'o':
@@ -237,6 +238,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+            temp=findNextEmptyInArray(filepaths);
+            filepaths[temp].file_descriptor=fd;
+            strcpy(filepaths[temp].file_path,word);
 			break;
 
 			case 'w':
@@ -420,9 +424,15 @@ int fs_close_serwer( int srvhndl )
 	close(srvhndl);
 }
 
-void listFileDescriptorList()
+void listFileDescriptorList(struct filepath this_filepath[])
 {
-
+    //Nie wypisuje to co bym chcial :S
+    int i;
+    for(i=0;i<MAXWORD+1;i++)
+    {
+        //if(this_filepath[i].file_descriptor==0) continue;
+        printf("%d ---- %s\n",this_filepath[i].file_descriptor,this_filepath[i].file_path);
+    }
 }
 
 int fs_open( int srvhndl, char *name, int flags )
@@ -760,7 +770,7 @@ void help()
 	printf("Dostepne polecenia :\n");
         printf(" c <ip>						- polacz z serwerem.\n");
         printf(" e 				            - zakoncz polaczenie.\n");
-        printf(" ls 				        - wylistuj pliki i ich file-descriptor.\n");
+        printf(" b  				        - wylistuj pliki i ich file-descriptor.\n");
         printf(" o <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND.\n");
         printf(" w <naz pli lok> <ile bajtow> - zapisz do pliku.\n");
        	printf(" r <desk pli na serw> <naz pli lok> <ile bajtow> - odczytaj z pliku.\n");
