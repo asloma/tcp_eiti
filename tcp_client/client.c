@@ -246,6 +246,9 @@ int main(int argc, char *argv[])
 				case 3:
 					fd = fs_open(srvhndl, word, O_APPEND);
 				break;
+				case 4:
+					fd = fs_open(srvhndl, word, O_RDWR);
+				break;
 			}
             if(fd<0) break;
             temp=findNextEmptyInArray(filepaths);
@@ -784,8 +787,8 @@ void help()
         printf(" c <ip>						- polacz z serwerem.\n");
         printf(" e 				            - zakoncz polaczenie.\n");
         printf(" b  				        - wylistuj pliki i ich file-descriptor.\n");
-        printf(" o <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND.\n");
-        printf(" w <naz pli lok> <ile bajtow> - zapisz do pliku.\n");
+        printf(" o <nazwa pliku> <tryb>		- otworz plik, tryb 0 - O_RDONLY, 1 - O_WRONLY, 2 - 0_CREAT, 3 - O_APPEND, 4 - O_RDWR.\n");
+        printf(" w <desk pli na serw> <naz pli lok> <ile bajtow> - zapisz do pliku.\n");
        	printf(" r <desk pli na serw> <naz pli lok> <ile bajtow> - odczytaj z pliku.\n");
        	printf(" s <desk pliku> <offset> <whence> 	- przesun wskaznik w pliku, whence: 0 - SEEK_SET, 1 - SEEK_CUR, 2 - SEEK_END\n");
        	printf(" a <desk pliku>			- zamknij plik.\n");

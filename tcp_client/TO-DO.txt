@@ -2,5 +2,5 @@
 DONE
 2. Da się wypisać listę filedescriptorów i nazwę pliku/ścieżki jemu odpowiadającej. 
 DONE
-3. Nie wczytuje/zapisuje się X bajtów, tylko cały plik.
-4. Opcja otwarcia pliku w trybie read/write.
+3. Nie wczytuje/zapisuje się X bajtów, tylko cały plik.??
+4. Opcja otwarcia pliku w trybie read/write. DONE -- serwer nie obsługuje, działa funkcja write, ale read juz nie 
