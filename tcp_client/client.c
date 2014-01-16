@@ -157,6 +157,15 @@ int findFileInArray(struct filepath *this_filepath,int file_descript)
     return -1; // Not found
 }
 
+void set_all_zero(struct filepath *this_filepath)
+{
+    int i;
+    for(i=0;i<MAXWORD+1;i++)
+    {
+        this_filepath[i].file_descriptor=0;
+    }
+}
+
 void listFileDescriptorList();
 
 int fs_open_serwer( char *adres_serwera );
@@ -188,6 +197,7 @@ int main(int argc, char *argv[])
 	char word4 [MAXWORD + 1];	//parametr komendy
 	int wordlen = 0;
 	help();
+	set_all_zero(filepaths);
 	while (1)
 	{
 		memset(word, 0, sizeof word);
@@ -216,7 +226,7 @@ int main(int argc, char *argv[])
 			break;
 
             case 'b':
-            listFileDescriptorList();
+            listFileDescriptorList(filepaths);
             break;
 			case 'o':
 
@@ -237,7 +247,7 @@ int main(int argc, char *argv[])
 					fd = fs_open(srvhndl, word, O_APPEND);
 				break;
 			}
-
+            if(fd<0) break;
             temp=findNextEmptyInArray(filepaths);
             filepaths[temp].file_descriptor=fd;
             strcpy(filepaths[temp].file_path,word);
@@ -328,6 +338,8 @@ int main(int argc, char *argv[])
 			case 'a':
 			if(connectedToAServer(srvhndl)==0) break; //Nie mozemy prowadzic operacji na pliku jesli nie jestesmy polaczeni z serwerem
 			fs_close(srvhndl,atoi(word));
+			temp=findFileInArray(filepaths,atoi(word));
+			filepaths[temp].file_descriptor=0;
 
 			break;
 
@@ -426,12 +438,13 @@ int fs_close_serwer( int srvhndl )
 
 void listFileDescriptorList(struct filepath this_filepath[])
 {
-    //Nie wypisuje to co bym chcial :S
+
     int i;
+    printf("FILE DESCRIPTOR || FILE NAME\n");
     for(i=0;i<MAXWORD+1;i++)
     {
-        //if(this_filepath[i].file_descriptor==0) continue;
-        printf("%d ---- %s\n",this_filepath[i].file_descriptor,this_filepath[i].file_path);
+        if(this_filepath[i].file_descriptor==0) continue;
+        printf("%d || %s\n",this_filepath[i].file_descriptor,this_filepath[i].file_path);
     }
 }
 
