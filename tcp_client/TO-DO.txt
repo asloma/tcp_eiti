@@ -1,4 +1,5 @@
 1. Wszystkie operacje po connect wykonywane na tym samym serverhandlerze. DONE
-2. Da się wypisać listę filedescriptorów i nazwę pliku/ścieżki jemu odpowiadającej.
+2. Da się wypisać listę filedescriptorów i nazwę pliku/ścieżki jemu odpowiadającej. 
+a) usuwanie structa przy close + drukowanie listy naprawić
 3. Nie wczytuje/zapisuje się X bajtów, tylko cały plik.
 4. Opcja otwarcia pliku w trybie read/write.
